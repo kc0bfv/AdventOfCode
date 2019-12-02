@@ -1,0 +1,3 @@
+# AdventOfCode
+
+These are my solutions from AdventOfCode, participating both 2018 and 2019.  In 2018 I completed most of the problems in Haskell, and in 2019 I am using Rust.  Most 2018 solutions are actually on a different hard drive, so I may or may not get those in here...
