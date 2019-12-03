@@ -18,14 +18,14 @@ impl LinePoint {
     }
     fn from_inbetween(prev: &LinePoint, dir_dist: &DirDist) -> Vec<LinePoint> {
         // TODO: don't love this...
-        let (add_x, add_y) = match dir_dist.dir {
-            Direction::DirUp => ( 0,  1),
-            Direction::DirDn => ( 0, -1),
-            Direction::DirLf => (-1,  0),
-            Direction::DirRt => ( 1,  0),
+        let (add_x, add_y, dist) = match dir_dist {
+            DirDist::DirUp(dist) => ( 0,  1, dist),
+            DirDist::DirDn(dist) => ( 0, -1, dist),
+            DirDist::DirLf(dist) => (-1,  0, dist),
+            DirDist::DirRt(dist) => ( 1,  0, dist),
         };
         let mut accum = *prev;
-        (0..dir_dist.dist).map(|_| {
+        (0..*dist).map(|_| {
                 let new_pt = LinePoint::new(accum.x + add_x, accum.y + add_y,
                         accum.walk + 1);
                 accum = new_pt.clone();
@@ -62,27 +62,23 @@ impl PartialEq for LinePoint {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum Direction {
-    DirUp, DirDn, DirLf, DirRt,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct DirDist {
-    dir: Direction,
-    dist: i64,
+enum DirDist {
+    DirUp(i64),
+    DirDn(i64),
+    DirLf(i64),
+    DirRt(i64),
 }
 
 impl DirDist {
     fn new(item: &String) -> DirDist {
-        let dist = item[1..].parse::<i64>().unwrap();
-        let dir = match item.chars().next() {
-            Some('U') => Direction::DirUp,
-            Some('D') => Direction::DirDn,
-            Some('L') => Direction::DirLf,
-            Some('R') => Direction::DirRt,
+        let dist = item[1..].parse().unwrap();
+        match item.chars().next() {
+            Some('U') => Self::DirUp(dist),
+            Some('D') => Self::DirDn(dist),
+            Some('L') => Self::DirLf(dist),
+            Some('R') => Self::DirRt(dist),
             _   => panic!("Invalid direction! {}", item),
-        };
-        DirDist { dir: dir, dist: dist }
+        }
     }
 }
 
