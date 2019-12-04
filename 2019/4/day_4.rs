@@ -25,13 +25,24 @@ fn test_criteria(val: &u32) -> bool {
     } else {
     }
 
-    // Two adjacent digits are same but not 3?
+    // Two adjacent digits are same but not 3? (part 2)
+    // /*
     if         (dig_6 == dig_5 && dig_5 != dig_4)
             || (dig_5 == dig_4 && dig_4 != dig_3 && dig_5 != dig_6)
             || (dig_4 == dig_3 && dig_3 != dig_2 && dig_4 != dig_5)
             || (dig_3 == dig_2 && dig_2 != dig_1 && dig_3 != dig_4)
             || (dig_2 == dig_1                   && dig_2 != dig_3)
     {
+    // */
+    // Two adjacent digits are same (part 1)
+    /*
+    if         (dig_6 == dig_5)
+            || (dig_5 == dig_4)
+            || (dig_4 == dig_3)
+            || (dig_3 == dig_2)
+            || (dig_2 == dig_1)
+    {
+    */
     } else {
         return false;
     }
