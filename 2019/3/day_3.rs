@@ -153,18 +153,18 @@ fn main() {
     let filename: String = args().skip(1).take(1).collect();
     let input_vals: Vec<Vec<String>> = read_strs_comma_sep(&filename);
 
-    input_vals[0].iter().map(|val| println!("Value: {:?}", val)).count();
-    input_vals[1].iter().map(|val| println!("Value: {:?}", val)).count();
+    //input_vals[0].iter().map(|val| println!("Value: {:?}", val)).count();
+    //input_vals[1].iter().map(|val| println!("Value: {:?}", val)).count();
 
     let line_1_unsort = build_line(&input_vals[0]);
-    println!("line1 {:?}", line_1_unsort);
+    //println!("line1 {:?}", line_1_unsort);
     let line_2_unsort = build_line(&input_vals[1]);
-    println!("line2 {:?}", line_2_unsort);
+    //println!("line2 {:?}", line_2_unsort);
 
     let line_1 = sort_line(&line_1_unsort);
-    println!("line1 sorted {:?}", line_1);
+    //println!("line1 sorted {:?}", line_1);
     let line_2 = sort_line(&line_2_unsort);
-    println!("line2 sorted {:?}", line_2);
+    //println!("line2 sorted {:?}", line_2);
 
     let mut intersect = intersection_with_walk(&line_1, &line_2);
 

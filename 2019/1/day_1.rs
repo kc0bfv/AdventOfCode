@@ -1,8 +1,8 @@
 pub mod file_help;
-use file_help::read_ints;
+use file_help::read_ints_nl_sep;
 
 fn main() {
-    let in_vals: Vec<i64> = read_ints("1_input");
+    let in_vals: Vec<i64> = read_ints_nl_sep("1_input");
 
     let handled_one = in_vals.iter().map(|&amt| handle_one(amt));
     let handled_two = in_vals.iter().map(|&amt| handle_two(amt));
