@@ -41,3 +41,11 @@ pub fn read_strs(filename: &str, sep: char) -> Vec<Vec<String>> {
 
     return in_vals;
 }
+
+pub fn read_digits(filename: &str) -> Vec<u8> {
+    let lines_strs = read_strs(filename, ' ');
+    lines_strs[0][0].chars().map(|char| char.to_digit(10))
+            .filter_map(|mbe| mbe)
+            .map(|val| val as u8)
+            .collect()
+}
