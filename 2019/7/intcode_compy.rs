@@ -1,4 +1,7 @@
-use std::io::{self,Write};
+use std::thread;
+use std::sync::mpsc;
+//use std::io;
+
 
 /*
 fn print_state(init: &str, items: &Vec<i64>) {
@@ -9,6 +12,7 @@ fn print_state(init: &str, items: &Vec<i64>) {
 }
 */
 
+/*
 fn get_int_from_stdin() -> i64 {
     let mut inval = String::new();
     io::stdin().read_line(&mut inval).unwrap();
@@ -17,6 +21,7 @@ fn get_int_from_stdin() -> i64 {
         Err(err) => panic!("Error on input: {}", err),
     }
 }
+*/
 
 #[derive(Debug)]
 enum ParamModes {
@@ -57,20 +62,15 @@ fn do_4_op<F>(opcode: i64, memory: &mut Vec<i64>, cur_pos: &mut usize, mut func:
     *cur_pos += 4;
 }
 
-fn do_input(opcode: i64, memory: &mut Vec<i64>, cur_pos: &mut usize, in_vals: &mut Vec<i64>) {
+fn do_input(prgm_index: usize, opcode: i64, memory: &mut Vec<i64>, cur_pos: &mut usize, input_rx: & mpsc::Receiver<i64>) {
     if opcode / 10 != 0 {
         panic!("Param modes not supported on input! {} {}", opcode, cur_pos);
     }
     let out_pos: usize = memory[*cur_pos + 1] as usize;
-    if in_vals.len() > 0 {
-        let in_val = in_vals.remove(0);
-        println!("Got input from list: {}", in_val);
-        memory[out_pos] = in_val;
-    } else {
-        print!("Input required! Provide it: ");
-        io::stdout().flush().unwrap();
-        memory[out_pos] = get_int_from_stdin();
-    }
+    println!("Prgm {} waiting for input.", prgm_index);
+    let in_val = input_rx.recv().unwrap();
+    println!("Prgm {} got input {}", prgm_index, in_val);
+    memory[out_pos] = in_val;
     *cur_pos += 2;
 }
 
@@ -82,11 +82,12 @@ fn handle_read_param(memory: &mut Vec<i64>, param: i64, mode: &ParamModes) -> i6
     }
 }
 
-fn do_output(opcode: i64, memory: &mut Vec<i64>, cur_pos: &mut usize, out_vals: &mut Vec<i64>) {
+fn do_output(prgm_index: usize, opcode: i64, memory: &mut Vec<i64>, cur_pos: &mut usize, out_vals: &mut Vec<i64>, output_tx: & mpsc::Sender<i64>) {
     let modes = get_param_modes(opcode, 1);
     let out_val: i64 = handle_read_param(memory, memory[*cur_pos + 1], &modes[0]);
-    println!("Output: {}", out_val);
+    println!("Prgm {} Output: {}", prgm_index, out_val);
     out_vals.push(out_val);
+    output_tx.send(out_val).unwrap();
     *cur_pos += 2;
 }
 
@@ -104,9 +105,10 @@ fn jump_test<F>(opcode: i64, memory: &mut Vec<i64>, cur_pos: &mut usize,
     }
 }
 
-pub fn run_program(initial_memory: &Vec<i64>, input_vals: &Vec<i64>) -> (Vec<i64>, Vec<i64>) {
+pub fn run_program(prgm_index: usize, initial_memory: &Vec<i64>,
+        input_rx: mpsc::Receiver<i64>, output_tx: mpsc::Sender<i64>) -> (Vec<i64>, Vec<i64>)
+{
     let mut memory: Vec<i64> = initial_memory.to_vec();
-    let mut in_vals: Vec<i64> = input_vals.to_vec();
     let mut out_vals: Vec<i64> = Vec::new();
 
     let mut cur_pos: usize = 0;
@@ -116,8 +118,8 @@ pub fn run_program(initial_memory: &Vec<i64>, input_vals: &Vec<i64>) -> (Vec<i64
         match opcode % 100 {
             1 => do_4_op(opcode, &mut memory, &mut cur_pos, std::ops::Add::add),
             2 => do_4_op(opcode, &mut memory, &mut cur_pos, std::ops::Mul::mul),
-            3 => do_input(opcode, &mut memory, &mut cur_pos, &mut in_vals),
-            4 => do_output(opcode, &mut memory, &mut cur_pos, &mut out_vals),
+            3 => do_input(prgm_index, opcode, &mut memory, &mut cur_pos, &input_rx),
+            4 => do_output(prgm_index, opcode, &mut memory, &mut cur_pos, &mut out_vals, &output_tx),
             5 => jump_test(opcode, &mut memory, &mut cur_pos, |val| val != 0),
             6 => jump_test(opcode, &mut memory, &mut cur_pos, |val| val == 0),
             7 => do_4_op(opcode, &mut memory, &mut cur_pos, |val_1, val_2| {
@@ -144,4 +146,23 @@ pub fn run_program(initial_memory: &Vec<i64>, input_vals: &Vec<i64>) -> (Vec<i64
         //println!("Now at position {}", cur_pos);
     }
     return (memory, out_vals);
+}
+
+pub fn run_program_thread(prgm_index: usize, initial_memory: &Vec<i64>) -> (thread::JoinHandle<()>, mpsc::Sender<i64>, mpsc::Receiver<i64>, mpsc::Receiver<bool>) {
+    let (input_tx, input_rx) = mpsc::channel();
+    let (output_tx, output_rx) = mpsc::channel();
+    let (finished_tx, finished_rx) = mpsc::channel();
+
+    let memory: Vec<i64> = initial_memory.to_vec();
+
+    let handle = thread::spawn(move || {
+            run_program(prgm_index, &memory, input_rx, output_tx);
+            match finished_tx.send(true) {
+                Ok(_) => (),
+                Err(err) => println!("Error sending finished {}", err),
+            }
+            println!("Thread {} done!", prgm_index);
+        });
+
+    return (handle, input_tx, output_rx, finished_rx);
 }
