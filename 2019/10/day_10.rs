@@ -37,23 +37,14 @@ impl ViewOfAsteroid {
 }
 
 fn find_gcd(in_uno: &i32, in_dos: &i32) -> i32 {
-    // Stupid way maybe
     if *in_uno == 0 || *in_dos == 0 {
         panic!("Cannot find gcd with a 0 value!");
     }
     let uno = in_uno.abs();
     let dos = in_dos.abs();
-    let uno_divisors: Vec<i32> = (1..(uno+1))
+    (1..(uno+1))
             .filter(|val| uno % val == 0 )
-            .collect();
-    let dos_divisors: Vec<i32> = (1..(dos+1))
-            .filter(|val| dos % val == 0)
-            .collect();
-    let in_both: Vec<&i32> = uno_divisors.iter()
-            .filter(|val| dos_divisors.contains(val))
-            .collect();
-    //println!("{} {}    {:?} {:?} {:?}", in_uno, in_dos, uno_divisors, dos_divisors, in_both);
-    **in_both.iter().max().unwrap()
+            .filter(|val| dos % val == 0).max().unwrap()
 }
 
 fn repr_map(in_lines: Vec<Vec<String>>) -> Vec<Point> {
@@ -69,7 +60,9 @@ fn repr_map(in_lines: Vec<Vec<String>>) -> Vec<Point> {
         }).collect()
 }
 
-fn build_view_from_asteroid(src_point: &Point, map: &Vec<Point>) -> Vec<ViewOfAsteroid> {
+fn build_view_from_asteroid(src_point: &Point, map: &Vec<Point>)
+        -> Vec<ViewOfAsteroid>
+{
     let views: Vec<ViewOfAsteroid> = map.iter().filter_map( |dst_point|
             if src_point.x == dst_point.x && src_point.y == dst_point.y {
                 None
@@ -92,7 +85,8 @@ fn build_view_from_asteroid(src_point: &Point, map: &Vec<Point>) -> Vec<ViewOfAs
         }
     }
 
-    let (_, out_vals): (Vec<(i32, i32)>, Vec<ViewOfAsteroid>) = hm_angles.drain().unzip();
+    let (_, out_vals): (Vec<(i32, i32)>, Vec<ViewOfAsteroid>) = 
+            hm_angles.drain().unzip();
     //println!("outvals {} {:?}", out_vals.len(), out_vals);
     return out_vals;
 }
@@ -134,15 +128,16 @@ fn view_compare(uno: &ViewOfAsteroid, dos: &ViewOfAsteroid) -> Ordering {
     }
 
     // Quadrants are the same...
-    if uno_quadrant == 0 || uno_quadrant == 2 {
-        let uno_slope = (uno.slope_x.abs() as f32) / (uno.slope_y.abs() as f32);
-        let dos_slope = (dos.slope_x.abs() as f32) / (dos.slope_y.abs() as f32);
-        return if uno_slope < dos_slope { Ordering::Less } else { Ordering::Greater };
-    } else {
-        let uno_slope = (uno.slope_y.abs() as f32) / (uno.slope_x.abs() as f32);
-        let dos_slope = (dos.slope_y.abs() as f32) / (dos.slope_x.abs() as f32);
-        return if uno_slope < dos_slope { Ordering::Less } else { Ordering::Greater };
-    }
+    let (uno_slope, dos_slope) = 
+        if uno_quadrant == 0 || uno_quadrant == 2 {
+            ((uno.slope_x.abs() as f32) / (uno.slope_y.abs() as f32),
+                    (dos.slope_x.abs() as f32) / (dos.slope_y.abs() as f32))
+        } else {
+            ((uno.slope_y.abs() as f32) / (uno.slope_x.abs() as f32),
+                    (dos.slope_y.abs() as f32) / (dos.slope_x.abs() as f32))
+        };
+    return if uno_slope < dos_slope { Ordering::Less }
+            else { Ordering::Greater };
 }
 
 fn shoot_order_views(views: &Vec<ViewOfAsteroid>) -> Vec<ViewOfAsteroid> {
@@ -159,16 +154,21 @@ fn main() {
     //println!("{:?}", map);
 
     let views = build_all_views(&map);
-    let (best_pt, best_view): &(&Point, Vec<ViewOfAsteroid>) = views.iter().max_by(
-            |(_, uno_views), (_, dos_views)| {
-                    let uno_count = uno_views.len();
-                    let dos_count = dos_views.len();
-                    uno_count.cmp(&dos_count)
-                }
-            ).unwrap();
+    let (best_pt, best_view): &(&Point, Vec<ViewOfAsteroid>) =
+            views.iter()
+                .max_by(
+                    |(_, uno_views), (_, dos_views)| {
+                            let uno_count = uno_views.len();
+                            let dos_count = dos_views.len();
+                            uno_count.cmp(&dos_count)
+                        }
+                    )
+                .unwrap();
     
     println!("Part 1: {} {:?}", best_view.len(), best_pt);
 
     let shoot_order = shoot_order_views(best_view);
-    shoot_order.iter().enumerate().for_each(|(ind, view)| println!("Shoot {} {:?}", ind+1, view));
+    shoot_order.iter()
+            .enumerate()
+            .for_each(|(ind, view)| println!("Shoot {} {:?}", ind+1, view));
 }
