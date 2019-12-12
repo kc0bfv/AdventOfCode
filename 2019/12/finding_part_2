@@ -1,0 +1,8 @@
+Output 400000 steps to a file, then search for the first set of points repeated using the Pos0 Pos1 Pos2 outputs.
+
+Repeats after:
+x - 186028
+y - 286332
+z - 108344
+
+Find the LCM
