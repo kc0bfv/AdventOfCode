@@ -41,7 +41,7 @@ struct MazeInt {
     keys: HashMap<char, Position>,
     key_blocks: HashMap<char, HashSet<char>>,
     doors: HashMap<char, Position>,
-    start: Position,
+    start: Vec<Position>,
     got_keys: HashMap<char, Position>,
 }
 impl MazeInt {
@@ -50,7 +50,7 @@ impl MazeInt {
         let mut keys: HashMap<char, Position> = HashMap::new();
         let key_blocks: HashMap<char, HashSet<char>> = HashMap::new();
         let mut doors: HashMap<char, Position> = HashMap::new();
-        let mut start: Position = Position::new(0, 0);
+        let mut start: Vec<Position> = vec![];
         let got_keys: HashMap<char, Position> = HashMap::new();
 
         let mut maze_line: Vec<SpotType> = vec![];
@@ -60,7 +60,7 @@ impl MazeInt {
                         maze.len().try_into().unwrap());
                 match spot {
                     '@' => {
-                            start = cur_pos;
+                            start.push(cur_pos);
                             maze_line.push(SpotType::Start);
                         },
                     '#' => maze_line.push(SpotType::Wall),
@@ -85,6 +85,47 @@ impl MazeInt {
         Self { maze, keys, key_blocks, doors, start, got_keys }
     }
 
+    fn get_quad_for_dest(&self, dest: &Position) -> usize {
+        if self.start.len() == 1 { return 0; }
+        assert!(self.start.len() == 4);
+        // Quad and start key map:
+        // 0 1
+        // 2 3
+        if dest.y < (self.maze.len() / 2) as i64 {
+            if dest.x < (self.maze[0].len() / 2) as i64 { 0 }
+            else { 1 }
+        } else {
+            if dest.x < (self.maze[0].len() / 2) as i64 { 2 }
+            else { 3 }
+        }
+    }
+    fn update_pos_to_key(&self, cur_pos: &Vec<Position>, key: &char) -> Vec<Position> {
+        let key_pos = match self.keys.get(key) {
+            Some(val) => val,
+            None => panic!("No start point for nonexistent key: {}", key),
+        };
+        let dest_quad = self.get_quad_for_dest(key_pos);
+        cur_pos.iter().cloned().enumerate()
+                .map(|(quad, pos)| if quad == dest_quad { key_pos.clone() } else { pos })
+                .collect()
+    }
+
+    fn get_cur_pos_for_dest<'a>(&'a self, cur_pos: &'a Vec<Position>, dest: &'a Position)
+        -> &'a Position
+    {
+        cur_pos.get(self.get_quad_for_dest(dest))
+                .expect("Invalid unwrap in get_cur_pos_for_dest")
+    }
+
+    fn get_start_for_key(&self, key: char) -> &Position {
+        let key_pos = match self.keys.get(&key) {
+            Some(val) => val,
+            None => panic!("No start point for nonexistent key: {}", key),
+        };
+        self.start.get(self.get_quad_for_dest(key_pos))
+                .expect("Invalid unwrap in get_start_for_key")
+    }
+
     fn init_key_blocks(&mut self,
             cache: &mut HashMap<(Position, Position),
                     Option<(Vec<Position>, HashSet<char>)>>
@@ -93,7 +134,6 @@ impl MazeInt {
         if self.key_blocks.len() > 0 {
             return;
         }
-        let start_dup = self.start.clone();
         let initial_filt: Vec<(char, Position)> =
             (b'a'..=b'z').map(|c| c as char)
                 .filter(|c| self.keys.contains_key(c))
@@ -101,7 +141,9 @@ impl MazeInt {
                 .collect();
         let key_chars: Vec<(char, Option<(Vec<Position>, HashSet<char>)>)> =
             initial_filt.into_iter()
-                .map(|(c, dest)| (c, self.find_path_to(&start_dup, &dest, cache)))
+                .map(|(c, dest)| (c, self.find_path_to(
+                        &self.start.clone(), &dest, cache))
+                        )
                 .collect();
         key_chars.into_iter()
                 .for_each(|(c, opt_val)| match opt_val {
@@ -115,7 +157,7 @@ impl MazeInt {
     fn find_shortest(&mut self,
             cache: &mut HashMap<(Position, Position),
                     Option<(Vec<Position>, HashSet<char>)>>,
-            cache_2: &mut HashMap<Position, HashSet<(Vec<char>, usize, usize)>>,
+            cache_2: &mut HashMap<Vec<Position>, HashSet<(Vec<char>, usize, usize)>>,
         ) -> usize
     {
         self.init_key_blocks(cache);
@@ -123,11 +165,11 @@ impl MazeInt {
         self.recurs_find(&self.start.clone(), 0, std::usize::MAX, cache, &path, cache_2)
     }
 
-    fn recurs_find(&mut self, cur_pos: &Position, in_path_len: usize, in_best_prev: usize,
+    fn recurs_find(&mut self, cur_pos: &Vec<Position>, in_path_len: usize, in_best_prev: usize,
             cache: &mut HashMap<(Position, Position),
                     Option<(Vec<Position>, HashSet<char>)>>,
             path: &Vec<char>,
-            cache_2: &mut HashMap<Position, HashSet<(Vec<char>, usize, usize)>>,
+            cache_2: &mut HashMap<Vec<Position>, HashSet<(Vec<char>, usize, usize)>>,
         ) -> usize
     {
         // No sense in continuing if we are already worse than previous best
@@ -150,7 +192,7 @@ impl MazeInt {
                     }
                     // Otherwise, we got a new best
                     let keys_vec: Vec<char> = keys_set.into_iter().collect();
-                    cache_2.get_mut(&cur_pos).unwrap().insert(
+                    cache_2.get_mut(cur_pos).unwrap().insert(
                             (keys_vec, in_path_len, cache_dist_rem));
                     return in_path_len + cache_dist_rem;
                 }
@@ -217,8 +259,9 @@ impl MazeInt {
                     Some(vec) => vec.len(),
                 };
             let mut self_mod: Self = self.clone();
-            let new_pos: Position = self.keys.get(&poss_key).unwrap().clone();
-            self_mod.got_keys.insert(poss_key.clone(), new_pos.clone());
+            let new_pos: Vec<Position> = self.update_pos_to_key(&cur_pos, &poss_key);
+            let poss_key_pos: Position = self.keys.get(&poss_key).unwrap().clone();
+            self_mod.got_keys.insert(poss_key.clone(), poss_key_pos);
             let mut new_path = path.clone();
             new_path.push(poss_key.clone());
             
@@ -245,7 +288,7 @@ impl MazeInt {
             let mut keys_set: BTreeSet<char> = BTreeSet::new();
             self.got_keys.keys().for_each(|k| { keys_set.insert(k.clone()); });
 
-            if cache_2.contains_key(&cur_pos) {
+            if cache_2.contains_key(cur_pos) {
                 let pos_cache = cache_2.get(cur_pos).unwrap().clone();
                 for item in pos_cache {
                     let (cache_key_vec, cache_dist_come, _cache_dist_rem) = item.clone();
@@ -254,7 +297,7 @@ impl MazeInt {
 
                     if keys_set.is_superset(&cache_keys) {
                         if in_path_len <= cache_dist_come {
-                            cache_2.get_mut(&cur_pos).unwrap().remove(&item);
+                            cache_2.get_mut(cur_pos).unwrap().remove(&item);
                         } else {
                             //println!("Unexpected cache find...");
                             //println!("{:?} {} {} - {:?} {}", cache_keys, cache_dist_come, _cache_dist_rem, keys_set, in_path_len);
@@ -265,13 +308,13 @@ impl MazeInt {
                 cache_2.insert(cur_pos.clone(), HashSet::new());
             }
             let keys_vec: Vec<char> = keys_set.into_iter().collect();
-            cache_2.get_mut(&cur_pos).unwrap().insert(
+            cache_2.get_mut(cur_pos).unwrap().insert(
                     (keys_vec, in_path_len, best_val - in_path_len));
         }
         return best_val
     }
 
-    fn find_dist_to(&mut self, cur_pos: &Position, dest: &Position,
+    fn find_dist_to(&mut self, cur_pos: &Vec<Position>, dest: &Position,
             cache: &mut HashMap<(Position, Position),
                     Option<(Vec<Position>, HashSet<char>)>>
         ) -> usize
@@ -282,11 +325,15 @@ impl MazeInt {
         }
     }
 
-    fn find_path_to(&mut self, cur_pos: &Position, dest: &Position,
+    fn find_path_to(&mut self, in_cur_pos: &Vec<Position>, dest: &Position,
             cache: &mut HashMap<(Position, Position),
                     Option<(Vec<Position>, HashSet<char>)>>
         ) -> Option<(Vec<Position>, HashSet<char>)>
     {
+        // Find the cur_pos for the actual dest
+        let cur_pos: &Position = self.get_cur_pos_for_dest(in_cur_pos, dest);
+        //println!("cur {:?} quad {:?} dest {:?}", in_cur_pos, cur_pos, dest);
+
         //println!("Finding...");
         let cache_key = (cur_pos.clone(), dest.clone());
         if cache.contains_key(&cache_key) {
@@ -359,7 +406,7 @@ impl MazeInt {
         return cache.get(&cache_key).unwrap().clone();
     }
 
-    fn find_path_to_no_blocks(&mut self, cur_pos: &Position, dest: &Position,
+    fn find_path_to_no_blocks(&mut self, cur_pos: &Vec<Position>, dest: &Position,
             cache: &mut HashMap<(Position, Position),
                     Option<(Vec<Position>, HashSet<char>)>>
         ) -> Option<Vec<Position>>
@@ -380,6 +427,49 @@ impl MazeInt {
             None => None,
         }
     }
+
+    fn part_2_mut(&mut self) {
+        let st = self.start[0].clone();
+        let (st_x, st_y): (usize, usize) = (st.x as usize, st.y as usize);
+        self.start = vec![];
+        if let Some(line) = self.maze.get_mut(st_y-1) {
+            if let Some(val) = line.get_mut(st_x-1) {
+                *val = SpotType::Start;
+                self.start.push(Position::new(st_x as i64 - 1, st_y as i64 - 1));
+            }
+            if let Some(val) = line.get_mut(st_x) {
+                *val = SpotType::Wall;
+            }
+            if let Some(val) = line.get_mut(st_x+1) {
+                *val = SpotType::Start;
+                self.start.push(Position::new(st_x as i64 + 1, st_y as i64 - 1));
+            }
+        }
+        if let Some(line) = self.maze.get_mut(st_y) {
+            if let Some(val) = line.get_mut(st_x-1) {
+                *val = SpotType::Wall;
+            }
+            if let Some(val) = line.get_mut(st_x) {
+                *val = SpotType::Wall;
+            }
+            if let Some(val) = line.get_mut(st_x+1) {
+                *val = SpotType::Wall;
+            }
+        }
+        if let Some(line) = self.maze.get_mut(st_y+1) {
+            if let Some(val) = line.get_mut(st_x-1) {
+                *val = SpotType::Start;
+                self.start.push(Position::new(st_x as i64 - 1, st_y as i64 + 1));
+            }
+            if let Some(val) = line.get_mut(st_x) {
+                *val = SpotType::Wall;
+            }
+            if let Some(val) = line.get_mut(st_x+1) {
+                *val = SpotType::Start;
+                self.start.push(Position::new(st_x as i64 + 1, st_y as i64 + 1));
+            }
+        }
+    }
 }
 
 fn main() {
@@ -388,9 +478,18 @@ fn main() {
 
     let mut cache: HashMap<(Position, Position),
             Option<(Vec<Position>, HashSet<char>)>> = HashMap::new();
-    let mut cache_2: HashMap<Position, HashSet<(Vec<char>, usize, usize)>> =
+    let mut cache_2: HashMap<Vec<Position>, HashSet<(Vec<char>, usize, usize)>> =
             HashMap::new();
     
-    let mut maze = MazeInt::new(input_lines);
+    let mut maze = MazeInt::new(input_lines.clone());
     println!("Part 1: {}", maze.find_shortest(&mut cache, &mut cache_2));
+
+    let mut cache: HashMap<(Position, Position),
+            Option<(Vec<Position>, HashSet<char>)>> = HashMap::new();
+    let mut cache_2: HashMap<Vec<Position>, HashSet<(Vec<char>, usize, usize)>> =
+            HashMap::new();
+    
+    let mut maze2 = MazeInt::new(input_lines);
+    maze2.part_2_mut();
+    println!("Part 2: {}", maze2.find_shortest(&mut cache, &mut cache_2));
 }
