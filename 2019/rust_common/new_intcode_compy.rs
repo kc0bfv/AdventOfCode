@@ -177,11 +177,22 @@ pub fn run_program<IO>(prgm_index: usize, initial_memory: &Vec<i64>,
         io_handler: &mut IO) -> (Vec<i64>, Vec<i64>)
     where IO: Iterator<Item = i64> + OutputHandler,
 {
+    let ret = run_program_inst_cnt(prgm_index, initial_memory,
+            io_handler);
+    (ret.0, ret.1)
+}
+
+pub fn run_program_inst_cnt<IO>(prgm_index: usize, initial_memory: &Vec<i64>,
+        io_handler: &mut IO) -> (Vec<i64>, Vec<i64>, usize)
+    where IO: Iterator<Item = i64> + OutputHandler,
+{
     let mut memrep = MemRep::new(initial_memory.to_vec(), 0, 0);
     let mut out_vals: Vec<i64> = Vec::new();
+    let mut inst_count: usize = 0;
 
     while memrep.cur_pos < initial_memory.len() {
         let opcode = memrep.get_mem(memrep.cur_pos);
+        inst_count += 1;
         //println!("Execing {}", opcode);
         match opcode % 100 {
             1 => do_4_op(opcode, &mut memrep, std::ops::Add::add),
@@ -215,7 +226,7 @@ pub fn run_program<IO>(prgm_index: usize, initial_memory: &Vec<i64>,
         //println!("Now at position {}", cur_pos);
     }
     let ret_mem = (0..initial_memory.len()).map(|ind| memrep.get_mem(ind)).collect();
-    return (ret_mem, out_vals);
+    return (ret_mem, out_vals, inst_count);
 }
 
 /*
