@@ -1,0 +1,20 @@
+with no inc_deal (it's 1...) rotation multiplies by the number of reps
+with inc_deal and no rotation, rotation is 0
+
+
+inc_deal = 1
+rot = 0
+HANDLE INC_DEAL(val)
+inc_deal = (inc_deal * val) % deck_size
+rot = (rot * val) % deck_size
+HANDLE INTONEW
+rot = deck_size + (-rot) % deck_size
+rot = rot + 1
+HANDLE CUT(val)
+rot = deck_size + rot + val % deck_size
+
+Then at the end, if we're forward, subtract 1
+
+
+with each mult, then...
+
