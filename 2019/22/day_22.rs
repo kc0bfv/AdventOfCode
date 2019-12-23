@@ -31,6 +31,7 @@ fn shuffle_parse(line: &str) -> Shuffle {
     }
 }
 
+/* Tools for summarizing a shuffle in a minimized way */
 fn summarize(shufs: &Vec<Shuffle>, deck_size: i64) -> (i64, bool, i64) {
     let mut fw_bk = true;
     let mut rot = 0;
@@ -62,7 +63,7 @@ fn calc_rot(count: i64, in_deck: i64, rot: i64, inc_deal: i64) -> i64 {
     let deck = in_deck as i128;
 
     while reps > 0 {
-        println!("Reps {} result {}", reps, result);
+        //println!("Reps {} result {}", reps, result);
         if reps % 2 == 1 {
             result = (parts.0 * result + parts.1) % deck;
         }
@@ -72,6 +73,7 @@ fn calc_rot(count: i64, in_deck: i64, rot: i64, inc_deal: i64) -> i64 {
     return ((result - (if count % 2 == 1 { 1 } else { 0 })) % deck) as i64;
 }
 
+// Repeat a summary `count` times, and summarize that repeated shuffle
 fn mult_summary(count: i64, (inc_deal, fw_bk, rot): (i64, bool, i64),
         deck_size: i64) -> (i64, bool, i64)
 {
@@ -98,7 +100,9 @@ fn mult_summary(count: i64, (inc_deal, fw_bk, rot): (i64, bool, i64),
 
     (out_inc_deal, out_back, rot)
 }
+/* End - tools for summarizing a shuffle in a minimized way */
 
+/* Utilities */
 fn mod_exp(in_base: i64, in_exp: i64, in_modval: i64) -> i64 {
     if in_modval == 1 {
         return 0;
@@ -120,6 +124,16 @@ fn mod_exp(in_base: i64, in_exp: i64, in_modval: i64) -> i64 {
     return i64::try_from(result).expect("Overflow in mod_exp result");
 }
 
+fn mod_inverse(a: i64, modval: i64) -> i64 {
+    // If deck_size is prime, then a ^ (modval - 2) yields the x such that
+    // a * x = 1  % modval
+    // TODO REALLY should make sure deck_size is prime, here...
+    return mod_exp(a, modval - 2, modval);
+}
+/* End - utilities */
+
+/* Work backwards through a reversed shuffle - for a card at pos in the output,
+   return where it was in the input */
 fn find_from(pos: i64, shuf: &Shuffle, deck_size: i64,
         cache: &mut HashMap<(usize, usize), Vec<i64>>)
     -> i64
@@ -167,38 +181,12 @@ fn ff_deal_inc(pos: i64, deck_size: i64, val: i64,
     return (pos + (deck_size * mult)) / val;
     */
 }
+/* End work backwards through a reversed shuffle */
 
-fn mod_inverse(a: i64, modval: i64) -> i64 {
-    // If deck_size is prime, then a ^ (modval - 2) yields the x such that
-    // a * x = 1  % modval
-    // TODO REALLY should make sure deck_size is prime, here...
-    return mod_exp(a, modval - 2, modval);
-}
 
-fn reorder_wraps_short(lit: i64, big: i64,
-        cache: &mut HashMap<(usize, usize), Vec<i64>>)
-    -> Vec<i64>
-{
-    let cache_key = (lit as usize, big as usize);
-    //println!("Cache?");
-    match cache.get(&cache_key) {
-        Some(outval) => { return outval.clone(); },
-        None => (),
-    }
-    //println!("Cache miss");
-
-    let ws: Vec<i64> = (0..lit).map(|val| (lit - ((val * big) % lit)) % lit)
-            .collect();
-    let mut out_list: Vec<i64> = vec![0; lit as usize];
-    ws.into_iter().enumerate()
-            .for_each(|(ind, val)| out_list[val as usize] = ind as i64);
-
-    cache.insert(cache_key, out_list.clone());
-    out_list
-}
-
+/* Straightforward shuffle */
 fn do_shuffle(deck: Vec<usize>, shuf: &Shuffle) -> Vec<usize> {
-    println!("Now: {:?}", deck);
+    //println!("Now: {:?}", deck);
     match shuf {
         Shuffle::IntoNew => do_into_new(deck),
         Shuffle::Cut(val) => do_cut(deck, *val),
@@ -228,46 +216,28 @@ fn do_deal_inc(deck: Vec<usize>, val: i64) -> Vec<usize> {
     }
     out_vec
 }
+/* End - straightforward shuffle */
 
 fn main() {
     let filename = args().nth(1).expect("Supply a filename!");
     let in_count: u32 = args().nth(2).expect("Supply a card count!")
             .parse().expect("Supply a valid card count!");
+    /*
     let p1_reps: u32 = args().nth(3).expect("Supply a p1 reps count!")
             .parse().expect("Supply a valid p1 reps count!");
+    */
+    let p1_reps: usize = 1;
     let input_raw = read_strs(&filename, ',');
     let input_lines: Vec<String> = input_raw.into_iter()
             .map(|sepd| sepd.into_iter().nth(0).unwrap())
             .collect();
 
-    //let p1_reps = 15;
-    let p2_deck = 119315717514047i64;
-    let p2_reps = 101741582076661i64;
-    //let p2_deck = 10007;
-    //let p2_deck = 2027;
-    //let p2_reps = 15;
-
-    /*
-    // Testing reorder_wraps_short...
-    let mut cache: HashMap<(usize, usize), Vec<i64>> = HashMap::new();
-    println!("{:?}", reorder_wraps_short(75, 119315717514047i64, &mut cache));
-    println!("{:?}", reorder_wraps_short(75, 119315717514047i64, &mut cache));
-    return;
-    */
 
     let shuffles: Vec<Shuffle> = input_lines.iter()
             .map(|line| shuffle_parse(line))
             .collect();
     //println!("Shuffles: {:?}", shuffles);
 
-    let summ_p1 = summarize(&shuffles, in_count as i64);
-    let mult_summ_p1 = mult_summary(p1_reps as i64, summ_p1, in_count as i64);
-    let summary = summarize(&shuffles, p2_deck);
-    let mult_summ = mult_summary(p2_reps, summary, p2_deck);
-    println!("P1 Summary {} {:?}", in_count, summ_p1);
-    println!("P1 mult summ {} {} {:?}", p1_reps as i64, in_count as i64, mult_summ_p1);
-    println!("P2 Summary {} {:?}", p2_deck, summary);
-    println!("P2 mult summ {} {} {:?}", p2_reps, p2_deck, mult_summ);
 
     let mut out_deck: Vec<usize> = (0..in_count)
             .map(|val| usize::try_from(val).expect("Error building deck"))
@@ -276,8 +246,8 @@ fn main() {
         out_deck = shuffles.iter()
                 .fold(out_deck, |deck, shuf| do_shuffle(deck, shuf));
     }
-    println!("Deck: {:?}", out_deck);
-    println!("Card 2020: {:?}", out_deck[2020]);
+    //println!("Deck: {:?}", out_deck);
+    //println!("Card 2020: {:?}", out_deck[2020]);
 
     let part1_pos = out_deck.iter().enumerate().find(|(_, val)| **val == 2019);
     match part1_pos {
@@ -285,16 +255,22 @@ fn main() {
         None => println!("Couldn't find 2019"),
     };
 
+    // PART 2
+    let p2_deck = 119315717514047i64;
+    let p2_reps = 101741582076661i64;
+    let p2_out_pos = 2020;
+
+    let summary = summarize(&shuffles, p2_deck);
+    let mult_summ = mult_summary(p2_reps, summary, p2_deck);
+    println!("Part 2 summary {:?}", summary);
+    println!("Part 2 multiplied summ {:?}", mult_summ);
+
     let mut p2_shuff: Vec<Shuffle> = vec![Shuffle::DealInc(mult_summ.0)];
     if ! mult_summ.1 {
         p2_shuff.push(Shuffle::IntoNew);
     }
     p2_shuff.push(Shuffle::Cut(mult_summ.2));
 
-    //let p2_deck = in_count as i64;
-    //let p2_reps = p1_reps;
-    //let p2_reps =   1000000;
-    let p2_out_pos = 2020;
     let mut cache: HashMap<(usize, usize), Vec<i64>> = HashMap::new();
     let shuf_rev: Vec<&Shuffle> = p2_shuff.iter().rev().collect();
     let mut orig_pos = p2_out_pos;
@@ -303,17 +279,4 @@ fn main() {
             .fold(orig_pos, |pos, shuf| find_from(pos, shuf, p2_deck, &mut cache));
     println!("Part 2: {}", orig_pos);
 
-    /*
-    let p2_deck = 119315717514047i64;
-    let p2_reps = 101741582076661i64;
-
-    //for _ in 0..101741582076661 {
-    for _ind in 0..10 {
-        println!("Suffle {}", _ind);
-        out_deck = shuffles.iter()
-            .fold(out_deck, |deck, shuf| do_shuffle(deck, shuf));
-    }
-
-    println!("Part 2: {}", out_deck[2020]);
-    */
 }
