@@ -1,6 +1,7 @@
-//use std::thread;
-//use std::sync::mpsc;
+use std::thread;
+use std::sync::mpsc;
 use std::collections::HashMap;
+use std::convert::TryInto;
 //use std::io;
 
 
@@ -220,13 +221,161 @@ pub fn run_program_inst_cnt<IO>(prgm_index: usize, initial_memory: &Vec<i64>,
                     //cur_pos += 1;
                     break;
                 },
-            _ => panic!("Unknown opcode encountered!"),
+            _ => panic!("Unknown opcode encountered! {}", opcode),
         }
         //print_state("Current state", &memory);
         //println!("Now at position {}", cur_pos);
     }
     let ret_mem = (0..initial_memory.len()).map(|ind| memrep.get_mem(ind)).collect();
     return (ret_mem, out_vals, inst_count);
+}
+
+#[derive(Debug)]
+struct IntcodeThreadIOHandler {
+    input_get:   mpsc::Receiver<i64>,
+    output_send: mpsc::Sender<i64>,
+    no_recv_output: Option<i64>, 
+    thread_index: usize,
+
+    idle_count: usize,
+    idle_sender: mpsc::Sender<i64>,
+}
+// no_recv_output - None (blocking wait for input), Some(val)
+//   (val to send when no recv data is available and it would block)
+impl IntcodeThreadIOHandler {
+    fn new(thread_index: usize,
+            input_get: mpsc::Receiver<i64>, output_send: mpsc::Sender<i64>,
+            no_recv_output: Option<i64>,
+
+            idle_sender: mpsc::Sender<i64>)
+        -> Self
+    {
+        Self { input_get, output_send, no_recv_output, thread_index,
+                idle_count: 0, idle_sender }
+    }
+
+    fn send_idle(&self) {
+        self.idle_sender.send(self.idle_count.try_into()
+                .expect("Idle conversion")).expect("Sending idle");
+    }
+}
+impl Iterator for IntcodeThreadIOHandler {
+    type Item = i64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.no_recv_output {
+            None => match self.input_get.recv() {
+                    Ok(val) => Some(val),
+                    Err(_) => {
+                            println!("Thread {} error during input.",
+                                    self.thread_index);
+                            None
+                        },
+                },
+            Some(backup_val) => match self.input_get.try_recv() {
+                    Ok(val) => {
+                            self.idle_count = 0;
+                            self.send_idle();
+                            Some(val)
+                        },
+                    Err(_) => {
+                            self.idle_count += 1;
+                            self.send_idle();
+                            Some(backup_val)
+                        },
+                },
+        }
+        //self.input_get.next()
+    }
+}
+impl OutputHandler for IntcodeThreadIOHandler {
+    fn output(&mut self, val: i64) -> Result<(), &'static str> {
+        if !self.no_recv_output.is_none() {
+            self.idle_count = 0;
+            self.send_idle();
+        }
+        match self.output_send.send(val) {
+            Ok(val) => Ok(val),
+            Err(_) => Err("Send error"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct IntcodeThread {
+    thread: thread::JoinHandle<()>,
+    thread_index: usize,
+    send_to_thread_mpsc: mpsc::Sender<i64>,
+    recv_from_thread_mpsc: mpsc::Receiver<i64>,
+    thread_done_mpsc: mpsc::Receiver<bool>,
+    reported_finished: bool,
+
+    idle_count: i64,
+    idle_count_receiver: mpsc::Receiver<i64>,
+}
+impl IntcodeThread {
+    pub fn new(thread_index: usize, initial_memory: &Vec<i64>,
+            no_recv_output: Option<i64>)
+        -> Self
+    {
+        let memory_copy = initial_memory.clone();
+        let (input_tx, input_rx) = mpsc::channel();
+        let (output_tx, output_rx) = mpsc::channel();
+        let (idle_count_tx, idle_count_rx) = mpsc::channel();
+        let (finished_tx, finished_rx) = mpsc::channel();
+
+        let handle = thread::spawn(move || {
+                let mut thread_io_handler = IntcodeThreadIOHandler::new(
+                        thread_index, input_rx, output_tx, no_recv_output,
+                        idle_count_tx);
+                run_program(thread_index, &memory_copy, &mut thread_io_handler);
+                match finished_tx.send(true) {
+                    Ok(_) => (),
+                    Err(err) => println!("Thread {} error sending finished {}",
+                            thread_index, err),
+                }
+                println!("Thread {} done!", thread_index);
+            });
+
+        Self {
+            thread: handle,
+            thread_index: thread_index,
+            send_to_thread_mpsc: input_tx,
+            recv_from_thread_mpsc: output_rx,
+            thread_done_mpsc: finished_rx,
+            reported_finished: false,
+            idle_count: 0,
+            idle_count_receiver: idle_count_rx,
+        }
+    }
+    pub fn check_finished(&mut self) -> bool {
+        if self.reported_finished {
+            return true;
+        }
+        match self.thread_done_mpsc.try_recv() {
+            Ok(_) => { self.reported_finished = true; true },
+            Err(_) => false,
+        }
+    }
+    pub fn send_thread_data(&self, val: i64) -> Result<(), mpsc::SendError<i64>> {
+        self.send_to_thread_mpsc.send(val)
+    }
+    pub fn recv_data_from_thread(&self) -> Result<i64, mpsc::TryRecvError> {
+        self.recv_from_thread_mpsc.try_recv()
+    }
+    pub fn recv_data_from_thread_block(&self) -> Result<i64, mpsc::RecvError> {
+        self.recv_from_thread_mpsc.recv()
+    }
+    pub fn check_idle_count(&mut self) -> i64 {
+        let mut got_something = true;
+        while got_something {
+            match self.idle_count_receiver.try_recv() {
+                Ok(val) => { self.idle_count = val; },
+                Err(_)  => { got_something = false; },
+            };
+        }
+        self.idle_count
+    }
 }
 
 /*
