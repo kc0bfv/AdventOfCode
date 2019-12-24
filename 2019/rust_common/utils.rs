@@ -1,3 +1,5 @@
+use std::fmt;
+
 // Index combinations without replacement
 pub fn combo_ind_without_repl(item_count: usize, output_amt: usize) -> Vec<Vec<usize>> {
     if output_amt == 1 {
@@ -16,4 +18,15 @@ pub fn combo_ind_without_repl(item_count: usize, output_amt: usize) -> Vec<Vec<u
         }
     }
     return ret_val;
+}
+
+pub fn print_vec_of_vecs<T>(input: &Vec<Vec<T>>)
+    where T: fmt::Display,
+{
+    for line in input.iter() {
+        for val in line.iter() {
+            print!("{}", val);
+        }
+        println!("");
+    }
 }
