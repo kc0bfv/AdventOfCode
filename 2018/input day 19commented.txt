@@ -1,0 +1,40 @@
+#ip 2
+addi 2 16 2
+seti 1 0 1 #set reg 1 to 1
+# Beginning of outer loop
+seti 1 3 3 # set reg 3 to 1
+# Beginning of inner loop 
+mulr 1 3 5 # 
+eqrr 5 4 5 # 
+addr 5 2 2 # 
+addi 2 1 2 # 
+addr 1 0 0 # if reg 1 * reg 3 == reg 4 then reg 0 += reg 1
+addi 3 1 3 # reg 3 += 1
+gtrr 3 4 5 # if reg 3 > reg 4 (10551387), store 1 in reg 5
+addr 2 5 2 # 
+seti 2 6 2 # if reg 3 <= reg 4, goto line 3
+addi 1 1 1 # else: reg 1 += 1
+gtrr 1 4 5 # 
+addr 5 2 2 # 
+seti 1 1 2 # if reg 1 <= reg 4 goto line 2
+mulr 2 2 2 # END!! otherwise jump out of list (to 256)
+# Gets the jump after the first instruction
+addi 4 2 4 # Adds 2 to reg 4
+mulr 4 4 4 # Mults reg 4 by reg 4 (2*2)
+mulr 2 4 4 # Mults reg 2 by reg 4 (19*4 - reg 4 becomes 76)
+muli 4 11 4 # Mults reg 4 by 11 - reg 4 is 836
+addi 5 6 5 # adds 6 to reg 5
+mulr 5 2 5 # mults reg 5 by reg 2 (6 * 22 = 132)
+addi 5 19 5 # Adds 19 to reg 5 - 151
+addr 4 5 4 # adds reg 5 into reg 4
+addr 2 0 2 # if reg 0 is 1, skip next line
+seti 0 7 2 # if reg 0 is 0, jump to line 1
+setr 2 6 5 # if reg 0 is 1, set reg 5 to reg 2 (27)
+mulr 5 2 5 # mult reg 2 and 5 into 5 - 27*28 = 756
+addr 2 5 5 # add reg 2 into reg 5 - 785
+mulr 2 5 5 # mult reg 2 and 5 store in 5 - 23550
+muli 5 14 5 # mult reg 5 by 14 - 329700
+mulr 5 2 5 # mult reg 5 by reg 2 - 329700 * 32 = 10550400
+addr 4 5 4 # add reg 5 into reg 4 - reg 4 is 10551387
+seti 0 7 0 # set reg 0 to 0
+seti 0 3 2 # jump to line 1

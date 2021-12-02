@@ -1,0 +1,19 @@
+do:
+    R2 = R5 | 0x10000
+    R5 = 0x9e1f1a
+    
+    do
+        R5 = R5 + (R2 & 0xff)
+        
+        R5 = R5 & 0xffffff
+        R5 = R5 * 0x1016b
+        R5 = R5 & 0xffffff
+        
+        if 256 > R2: break        
+
+        for(R4 = 0; R1 <= R2; R4 += 1)
+            R1 = R4 + 1
+            R1 = R1 * 256
+
+        R2 = R4
+while R5 != R0
