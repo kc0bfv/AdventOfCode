@@ -73,19 +73,15 @@ class Ship2:
         elif direc.cmd == "L":
             vec_l = vec_len(ship.wn, ship.we)
             vec_d = vec_deg(ship.wn, ship.we)
-            print(vec_d)
             vec_d += direc.dist
             vec_d %= 360
-            print(vec_d)
             self.wn = vec_n(vec_l, vec_d)
             self.we = vec_e(vec_l, vec_d)
         elif direc.cmd == "R":
             vec_l = vec_len(ship.wn, ship.we)
             vec_d = vec_deg(ship.wn, ship.we)
-            print(vec_d)
             vec_d -= direc.dist
             vec_d %= 360
-            print(vec_d)
             self.wn = vec_n(vec_l, vec_d)
             self.we = vec_e(vec_l, vec_d)
         elif direc.cmd == "F":
@@ -99,15 +95,10 @@ if __name__ == "__main__":
 
     for direc in direcs:
         ship.move(direc)
-        print("{} {} {}".format(ship.e, ship.n, ship.o))
 
-    print("{} {} {}".format(ship.e, ship.n, ship.o))
     print("Part 1: {}".format(abs(round(ship.e)) + abs(round(ship.n))))
 
     ship = Ship2()
     for direc in direcs:
-        print(str(direc))
         ship.move(direc)
-        print("p {} {}    w {} {}".format(ship.e, ship.n, ship.we, ship.wn))
-    print("p {} {}    w {} {}".format(ship.e, ship.n, ship.we, ship.wn))
     print("Part 2: {}".format(abs(round(ship.e)) + abs(round(ship.n))))
