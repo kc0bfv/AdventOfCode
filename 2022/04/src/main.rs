@@ -75,14 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .split(",")
                 .map(|instr| { Elf::new(instr) })
                 .collect::<Result<_,_>>()
-        })
-        .map( |pair| { pair.map( Pair::new ) })
-        .map( |cur| {
-            match cur {
-                Ok(Err(err)) => Err(err),
-                Err(err) => Err(err),
-                Ok(Ok(v)) => Ok(v),
-            }
+                .and_then( Pair::new )
         })
         .collect::<Result<_,_>>()?;
 
