@@ -1,0 +1,220 @@
+AA: 0
+  Link AA-DD weight 1
+  Link AA-II weight 1
+  Link AA-BB weight 1
+
+  Dist to AA 0 nexthop None
+  Dist to BB 1 nexthop BB
+  Dist to CC 2 nexthop BB
+  Dist to DD 1 nexthop DD
+  Dist to EE 2 nexthop DD
+  Dist to FF 3 nexthop DD
+  Dist to GG 4 nexthop DD
+  Dist to HH 5 nexthop DD
+  Dist to II 1 nexthop II
+  Dist to JJ 2 nexthop II
+
+  Link AA-BB weight 1
+  Link AA-CC weight 2
+  Link AA-DD weight 1
+  Link AA-EE weight 2
+  Link AA-HH weight 5
+  Link AA-JJ weight 2
+
+BB: 13
+  Link BB-CC weight 1
+  Link BB-AA weight 1
+
+  Dist to AA 1 nexthop AA
+  Dist to BB 0 nexthop None
+  Dist to CC 1 nexthop CC
+  Dist to DD 2 nexthop CC
+  Dist to EE 3 nexthop CC
+  Dist to FF 4 nexthop CC
+  Dist to GG 5 nexthop CC
+  Dist to HH 6 nexthop CC
+  Dist to II 2 nexthop AA
+  Dist to JJ 3 nexthop AA
+
+  Link BB-BB weight 0
+  Link BB-CC weight 1
+  Link BB-DD weight 2
+  Link BB-EE weight 3
+  Link BB-HH weight 6
+  Link BB-JJ weight 3
+
+CC: 2
+  Link CC-DD weight 1
+  Link CC-BB weight 1
+
+  Dist to AA 2 nexthop BB
+  Dist to BB 1 nexthop BB
+  Dist to CC 0 nexthop None
+  Dist to DD 1 nexthop DD
+  Dist to EE 2 nexthop DD
+  Dist to FF 3 nexthop DD
+  Dist to GG 4 nexthop DD
+  Dist to HH 5 nexthop DD
+  Dist to II 3 nexthop BB
+  Dist to JJ 4 nexthop BB
+
+  Link CC-BB weight 1
+  Link CC-CC weight 0
+  Link CC-DD weight 1
+  Link CC-EE weight 2
+  Link CC-HH weight 5
+  Link CC-JJ weight 4
+
+DD: 20
+  Link DD-CC weight 1
+  Link DD-AA weight 1
+  Link DD-EE weight 1
+
+  Dist to AA 1 nexthop AA
+  Dist to BB 2 nexthop CC
+  Dist to CC 1 nexthop CC
+  Dist to DD 0 nexthop None
+  Dist to EE 1 nexthop EE
+  Dist to FF 2 nexthop EE
+  Dist to GG 3 nexthop EE
+  Dist to HH 4 nexthop EE
+  Dist to II 2 nexthop AA
+  Dist to JJ 3 nexthop AA
+
+  Link DD-BB weight 2
+  Link DD-CC weight 1
+  Link DD-DD weight 0
+  Link DD-EE weight 1
+  Link DD-HH weight 4
+  Link DD-JJ weight 3
+
+EE: 3
+  Link EE-FF weight 1
+  Link EE-DD weight 1
+
+  Dist to AA 2 nexthop DD
+  Dist to BB 3 nexthop DD
+  Dist to CC 2 nexthop DD
+  Dist to DD 1 nexthop DD
+  Dist to EE 0 nexthop None
+  Dist to FF 1 nexthop FF
+  Dist to GG 2 nexthop FF
+  Dist to HH 3 nexthop FF
+  Dist to II 3 nexthop DD
+  Dist to JJ 4 nexthop DD
+
+  Link EE-BB weight 3
+  Link EE-CC weight 2
+  Link EE-DD weight 1
+  Link EE-EE weight 0
+  Link EE-HH weight 3
+  Link EE-JJ weight 4
+
+FF: 0
+  Link FF-EE weight 1
+  Link FF-GG weight 1
+
+  Dist to AA 3 nexthop EE
+  Dist to BB 4 nexthop EE
+  Dist to CC 3 nexthop EE
+  Dist to DD 2 nexthop EE
+  Dist to EE 1 nexthop EE
+  Dist to FF 0 nexthop None
+  Dist to GG 1 nexthop GG
+  Dist to HH 2 nexthop GG
+  Dist to II 4 nexthop EE
+  Dist to JJ 5 nexthop EE
+
+  Link FF-BB weight 4
+  Link FF-CC weight 3
+  Link FF-DD weight 2
+  Link FF-EE weight 1
+  Link FF-HH weight 2
+  Link FF-JJ weight 5
+
+GG: 0
+  Link GG-FF weight 1
+  Link GG-HH weight 1
+
+  Dist to AA 4 nexthop FF
+  Dist to BB 5 nexthop FF
+  Dist to CC 4 nexthop FF
+  Dist to DD 3 nexthop FF
+  Dist to EE 2 nexthop FF
+  Dist to FF 1 nexthop FF
+  Dist to GG 0 nexthop None
+  Dist to HH 1 nexthop HH
+  Dist to II 5 nexthop FF
+  Dist to JJ 6 nexthop FF
+
+  Link GG-BB weight 5
+  Link GG-CC weight 4
+  Link GG-DD weight 3
+  Link GG-EE weight 2
+  Link GG-HH weight 1
+  Link GG-JJ weight 6
+
+HH: 22
+  Link HH-GG weight 1
+
+  Dist to AA 5 nexthop GG
+  Dist to BB 6 nexthop GG
+  Dist to CC 5 nexthop GG
+  Dist to DD 4 nexthop GG
+  Dist to EE 3 nexthop GG
+  Dist to FF 2 nexthop GG
+  Dist to GG 1 nexthop GG
+  Dist to HH 0 nexthop None
+  Dist to II 6 nexthop GG
+  Dist to JJ 7 nexthop GG
+
+  Link HH-BB weight 6
+  Link HH-CC weight 5
+  Link HH-DD weight 4
+  Link HH-EE weight 3
+  Link HH-HH weight 0
+  Link HH-JJ weight 7
+
+II: 0
+  Link II-AA weight 1
+  Link II-JJ weight 1
+
+  Dist to AA 1 nexthop AA
+  Dist to BB 2 nexthop AA
+  Dist to CC 3 nexthop AA
+  Dist to DD 2 nexthop AA
+  Dist to EE 3 nexthop AA
+  Dist to FF 4 nexthop AA
+  Dist to GG 5 nexthop AA
+  Dist to HH 6 nexthop AA
+  Dist to II 0 nexthop None
+  Dist to JJ 1 nexthop JJ
+
+  Link II-BB weight 2
+  Link II-CC weight 3
+  Link II-DD weight 2
+  Link II-EE weight 3
+  Link II-HH weight 6
+  Link II-JJ weight 1
+
+JJ: 21
+  Link JJ-II weight 1
+
+  Dist to AA 2 nexthop II
+  Dist to BB 3 nexthop II
+  Dist to CC 4 nexthop II
+  Dist to DD 3 nexthop II
+  Dist to EE 4 nexthop II
+  Dist to FF 5 nexthop II
+  Dist to GG 6 nexthop II
+  Dist to HH 7 nexthop II
+  Dist to II 1 nexthop II
+  Dist to JJ 0 nexthop None
+
+  Link JJ-BB weight 3
+  Link JJ-CC weight 4
+  Link JJ-DD weight 3
+  Link JJ-EE weight 4
+  Link JJ-HH weight 7
+  Link JJ-JJ weight 0
+1657 ['DD', 'CC', 'JJ', 'EE', 'HH']
