@@ -61,9 +61,37 @@ def check_list(left, right):
     cur_entry += 1
   return None
 
+def build_list(chars, ind = 1):
+    retval = list()
+    curentry = None
+
+    while ind < len(chars):
+        char = chars[ind]
+        if char == "]":
+            if curentry is not None:
+                retval.append(curentry)
+            return retval, ind
+        elif char == "[":
+            assert(curentry is None)
+            sublist, ind = build_list(chars, ind + 1)
+            curentry = retval.append(sublist)
+        elif char == ",":
+            if curentry is not None:
+                retval.append(curentry)
+            curentry = None
+        else:
+            assert(ord("0") <= ord(char) <= ord("9"))
+            if curentry is None:
+                curentry = 0
+            curentry *= 10
+            curentry += int(char)
+        ind += 1
+    raise RuntimeError("Should never have gotten to end of build list")
+
 def main(filename):
   with open(filename, "r") as f:
-    lines = [eval(line.strip()) for line in f if line.strip() != ""]
+    built_lines = (build_list(line.strip()) for line in f if line.strip() != "")
+    lines = [liste for liste, _ in built_lines]
 
   pair_up = [pair for pair in grouper(lines, 2)]
 
