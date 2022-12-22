@@ -95,7 +95,7 @@ def do_step(screen, rock, jet):
         return True
     return False
 
-def main(filename, warmup, period):
+def main(filename):
     with open(filename, "r") as f:
         dirs = list(f.read().strip())
 
@@ -108,7 +108,12 @@ def main(filename, warmup, period):
     rocks_set = 0
     cur_rock = next(infinite_rocks)
     height_changes = list()
+    he_ch_str = ""
+    window_str = ""
+    window_size = 20
     rock_cnt = 2022
+    rep_start_1 = None
+    rep_start_2 = None
     while rocks_set < rock_cnt:
         pre_height = screen.max_height
         rock_stopped = do_step(screen, cur_rock, next(infinite_dirs))
@@ -116,14 +121,26 @@ def main(filename, warmup, period):
         #print(screen.special_str(cur_rock))
         if rock_stopped:
             height_changes.append(screen.max_height - pre_height)
+            he_ch_str += str(screen.max_height - pre_height)
+            window_str += str(screen.max_height - pre_height)
+            window_str = window_str[-window_size:]
+
+            if rep_start_1 is None and len(window_str) == window_size and window_str in he_ch_str[:-window_size]:
+                rep_start_2 = rocks_set - window_size
+                rep_start_1 = he_ch_str.find(window_str)
+
             rocks_set += 1
             cur_rock = next(infinite_rocks)
+                
 
     #print()
     #print(screen)
 
     print(f"Part 1: {screen.max_height + 1}")
     #print("".join(str(i) for i in height_changes))
+
+    warmup = rep_start_1 + 1
+    period = rep_start_2 - rep_start_1 + 1
 
     rock_cnt = 1000000000000
     first = sum(height_changes[:warmup])
@@ -134,5 +151,5 @@ def main(filename, warmup, period):
     print(f"Part 2: {first+mult+rem}")
 
 if __name__ == "__main__":
-    #main("samp", 16, 35)
-    main("input.txt", 200, 1690)
+    main("samp")
+    main("input.txt")
