@@ -19,18 +19,25 @@ def recur(conc, cal, val_list, ind, accum, func, opers, next_o):
     if ind >= len(val_list):
         #print(accum, opers, val_list)
         return accum, opers
+
     accum = func(accum, val_list[ind])
     opers += next_o
 
+    if accum > cal:
+        return accum, None
+
+
     sval, sopers = recur(conc, cal, val_list, ind+1, accum, add, opers, "S")
-    mval, mopers = recur(conc, cal, val_list, ind+1, accum, mul, opers, "M")
+    if sval == cal:
+        return sval, sopers
+
     if conc:
         cval, copers = recur(conc, cal, val_list, ind+1, accum, con, opers, "C")
 
-    if sval == cal:
-        return sval, sopers
-    elif conc and cval == cal:
-        return cval, copers
+        if cval == cal:
+            return cval, copers
+
+    mval, mopers = recur(conc, cal, val_list, ind+1, accum, mul, opers, "M")
     return mval, mopers
 
 def main(filename):
